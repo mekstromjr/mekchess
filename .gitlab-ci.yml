@@ -1,0 +1,27 @@
+# Foundation CI for the Rust workspace. The perft correctness gate (Epic A5)
+# hangs off the `test` job here — once it lands, a red perft fails the pipeline
+# and no move-generation regression can merge.
+stages:
+  - check
+
+variables:
+  CARGO_HOME: "$CI_PROJECT_DIR/.cargo"
+  CARGO_TERM_COLOR: "always"
+
+rust:
+  stage: check
+  image: rust:1.85
+  tags:
+    - meklab-k3s
+  cache:
+    key: "$CI_COMMIT_REF_SLUG"
+    paths:
+      - .cargo/
+      - target/
+  before_script:
+    - rustup component add rustfmt clippy
+  script:
+    - cargo fmt --all -- --check
+    - cargo clippy --all-targets --workspace -- -D warnings
+    - cargo build --workspace --all-targets
+    - cargo test --workspace
