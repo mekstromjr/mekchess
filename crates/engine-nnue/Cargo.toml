@@ -1,0 +1,20 @@
+[package]
+name = "engine-nnue"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Neural-network (NNUE) evaluation chess engine; hand-written quantized inference (Epic E)."
+
+[lib]
+name = "engine_nnue"
+path = "src/lib.rs"
+
+[[bin]]
+name = "engine-nnue-uci"
+path = "src/bin/uci.rs"
+
+[dependencies]
+chess-core.workspace = true
+uci.workspace = true

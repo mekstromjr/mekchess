@@ -1,0 +1,14 @@
+[package]
+name = "chess-core"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Shared chess domain: board representation, move generation, FEN/PGN, and UCI-facing types."
+
+[dependencies]
+
+[dev-dependencies]
+# Perft oracle goes here in Epic A5 (dev-only, keeps GPL out of shipped binaries):
+# shakmaty = "0.30"

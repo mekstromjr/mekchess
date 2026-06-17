@@ -1,0 +1,11 @@
+[package]
+name = "uci"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Reusable UCI (Universal Chess Interface) protocol plumbing shared by the engine binaries."
+
+[dependencies]
+chess-core.workspace = true
