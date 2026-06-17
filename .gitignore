@@ -1,0 +1,21 @@
+# Rust
+/target/
+**/*.rs.bk
+*.pdb
+
+# Neural net artifacts — weights/checkpoints are data, not source.
+# Track configs and training code; keep large binaries out of git.
+*.pt
+*.onnx
+*.safetensors
+*.nnue
+*.ckpt
+/Engines/neuro/weights/
+/Engines/neuro/checkpoints/
+
+# Local env / secrets (e.g. Lichess bot API token)
+.env
+*.local
+
+# Editor / OS
+.DS_Store
