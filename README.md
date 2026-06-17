@@ -1,5 +1,7 @@
 # mekchess
 
+[![pipeline status](https://gitlab.meklab.net/meklab/mekchess/badges/main/pipeline.svg)](https://gitlab.meklab.net/meklab/mekchess/-/commits/main)
+
 A long-term, slow-burn playground for chess engines, Rust, neural nets, and
 Lichess bots — with the computationally intensive workloads self-hosted in the
 meklab homelab.
