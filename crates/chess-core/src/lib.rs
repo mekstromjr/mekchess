@@ -15,8 +15,13 @@
 //! - `movegen`   — magic-bitboard legal move generation (ticket A4).
 //! - `perft`     — leaf-node counting + divide, the correctness gate (A5).
 
-/// Placeholder so the crate compiles and `cargo test` has something to run
-/// before the real modules exist. Replace as Epic A fills in.
+pub mod board;
+pub mod fen;
+pub mod piece;
+pub mod square;
+
+/// Placeholder kept until the remaining entry points land; the `uci` crate's
+/// wiring test still references it. Remove once real APIs exist.
 pub const NAME: &str = "chess-core";
 
 #[cfg(test)]
