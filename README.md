@@ -1,6 +1,8 @@
 # mekchess
 
-[![pipeline status](https://gitlab.meklab.net/meklab/mekchess/badges/main/pipeline.svg)](https://gitlab.meklab.net/meklab/mekchess/-/commits/main)
+> **Read-only mirror.** This project is developed on a self-hosted GitLab instance and
+> mirrored to GitHub for visibility. Issues and pull requests are not accepted here;
+> the mirror is overwritten on every push. Contact: see the profile of [@mekstromjr](https://github.com/mekstromjr).
 
 A long-term, slow-burn playground for chess engines, Rust, neural nets, and
 Lichess bots — with the computationally intensive workloads self-hosted in the
