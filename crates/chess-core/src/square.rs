@@ -13,7 +13,7 @@
 //! ```
 //!
 //! Note: this is purely index <-> (file, rank) math. The FEN "rank 8 comes
-//! first" reversal is NOT here — that lives in `fen::parse_placement`. Keep
+//! first" reversal is NOT here — that lives in `fen::placement_from_fen`. Keep
 //! this type honest and simple.
 //!
 //! ## Rust concept: the newtype pattern
@@ -96,11 +96,6 @@ impl Square {
     /// Parse algebraic coordinates like `"e4"` into a square, or `None` if the
     /// input isn't exactly a valid file letter (`a`..`h`) followed by a rank
     /// digit (`1`..`8`).
-    ///
-    /// Hint: a `&str` is bytes under the hood. `s.as_bytes()` gives `&[u8]`;
-    /// check the length is 2, then convert the file byte (`b'a'..=b'h'`) and
-    /// rank byte (`b'1'..=b'8'`) into 0-based `file`/`rank`. ASCII math:
-    /// `file_byte - b'a'`, `rank_byte - b'1'`. Reject anything out of range.
     pub fn from_algebraic(s: &str) -> Option<Square> {
         if Self::is_valid_algebraic(s) {
             let bytes = s.as_bytes();
@@ -113,10 +108,6 @@ impl Square {
     }
 
     /// The algebraic coordinates for this square, e.g. `"e4"`.
-    ///
-    /// Hint: turn `file` back into a letter with `(b'a' + self.file()) as char`,
-    /// and `rank` into a digit similarly. A `String` can be built from chars
-    /// (e.g. `format!("{}{}", file_char, rank_char)`).
     pub fn to_algebraic(self) -> String {
         let file_char = (b'a' + self.file()) as char;
         let rank_char = (b'1' + self.rank()) as char;

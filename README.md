@@ -1,70 +1,67 @@
 # mekchess
 
-> **Read-only mirror.** This project is developed on a self-hosted GitLab instance and
-> mirrored to GitHub for visibility. Issues and pull requests are not accepted here;
-> the mirror is overwritten on every push. Contact: see the profile of [@mekstromjr](https://github.com/mekstromjr).
+A chess engine workspace in Rust, built from the board up as a long-term project for learning engine design, testing and, later, neural-network evaluation.
 
-A long-term, slow-burn playground for chess engines, Rust, neural nets, and
-Lichess bots — with the computationally intensive workloads self-hosted in the
-meklab homelab.
+![Perft position 2 rendered from FEN, next to the FEN string that the parser reads and writes back exactly](docs/screenshots/mekchess-board.webp)
 
-It is deliberately polyglot: Rust for the engines and shared chess domain,
-Python for neural-net training, TypeScript for the debug UI, and existing
-ecosystem tools (fast-chess, OpenBench, lichess-bot) for everything already
-solved.
+**Status:** early. `chess-core` has the board representation and FEN parsing and serialization (22 tests; 26 across the workspace). Legal move generation is next. The engine, UCI and arena crates are placeholders, and `training/` and `ui/` contain plans only.
 
-## Architecture
+Developed on a self-hosted GitLab; this GitHub repo is a read-only mirror.
 
-Each engine is a **library crate** (its logic, depending on `chess-core`) plus a
-**thin UCI binary**. That split is the keystone of the whole project:
+## What exists today
 
-- The in-process **arena** calls engines as Rust libraries, sharing the
-  `chess-core` board directly — fast iteration, no text round-trip.
-- The same engines compile to **UCI binaries** that plug into fast-chess (for
-  SPRT strength testing), external GUIs, and the lichess bot bridge.
+`crates/chess-core`:
 
-So the custom board representation is the shared foundation *inside* the Rust
-world, and UCI is the boundary at the *edge* where mekchess meets other tools.
+- **Squares** use Little-Endian Rank-File indexing (a1 = 0, h8 = 63) with algebraic parse and format.
+- **Board** is a 64-entry mailbox plus side to move, castling rights, en passant target and the two move clocks.
+- **FEN** parse and serialize for all six fields, including the rank flip (FEN lists rank 8 first; the board stores a1 at index 0) and run-length encoding of empty squares. Parsing returns a typed `FenError` naming the first bad field.
+- **Tests** check round trips for every piece, castling field and placement, reject malformed input, and require the six standard perft positions to round-trip byte for byte.
+
+## Design
+
+Each engine is planned as a **library crate** plus a **thin UCI binary**:
+
+- The in-process arena calls engines as Rust libraries on the shared `chess-core` board, with no text round trip, for fast local iteration.
+- The same engines compile to UCI binaries for fast-chess (SPRT strength testing), external GUIs and a Lichess bot bridge.
+
+So `chess-core` is the shared foundation inside the Rust workspace, and UCI is the boundary where mekchess meets other tools. The workspace is deliberately polyglot: Rust for engines, Python for NNUE training, TypeScript for a debug UI, and existing tools (fast-chess, OpenBench, lichess-bot) for problems already solved.
 
 ## Layout
 
-| Path | Purpose |
-|------|---------|
-| `crates/chess-core/` | Shared domain: board representation, move generation, FEN/PGN, Zobrist, perft. |
-| `crates/uci/` | Reusable UCI protocol plumbing shared by the engine binaries. |
-| `crates/engine-classical/` | Classical alpha-beta engine + handcrafted eval (lib + UCI bin). |
-| `crates/engine-nnue/` | Neural-net (NNUE) engine; hand-written quantized inference (lib + UCI bin). |
-| `crates/arena/` | In-process engine-vs-engine match runner for fast local iteration. |
-| `training/` | Python NNUE training pipeline (nnue-pytorch). |
-| `ui/` | Web debug visualizer (Vite + React + chessground). |
-| `books/` | Opening books for test games. |
+| Path | Purpose | State |
+|------|---------|-------|
+| `crates/chess-core/` | Board, squares, pieces, FEN. Later: Zobrist, move generation, perft. | in progress |
+| `crates/uci/` | Shared UCI protocol loop and `Engine` trait. | planned (stub) |
+| `crates/engine-classical/` | Alpha-beta search with a handcrafted eval (lib + UCI bin). | planned (stub) |
+| `crates/engine-nnue/` | NNUE engine with hand-written quantized inference (lib + UCI bin). | planned (stub) |
+| `crates/arena/` | In-process engine-vs-engine match runner. | planned (stub) |
+| `training/` | Python NNUE training pipeline (nnue-pytorch). | planned (README only) |
+| `ui/` | Web debug visualizer (Vite, React, chessground). | planned (README only) |
+| `books/` | Opening books for test games. | planned (README only) |
 
-Kubernetes manifests for the hosted workloads (distributed testing, the UI,
-the lichess bot) live in `meklab-k8s` and are reconciled by Flux — source
-builds here, deploys there.
+The full plan and its order are in [docs/roadmap.md](docs/roadmap.md).
 
-## Build
+## Build and test
+
+Requires Rust 1.85 or newer (edition 2024).
 
 ```sh
-cargo build      # all crates + both UCI binaries
-cargo test       # includes the perft correctness gate once Epic A5 lands
+git clone https://github.com/mekstromjr/mekchess.git
+cd mekchess
+cargo test --workspace
 ```
 
-## Roadmap
+CI (GitLab) runs the same four checks on every push:
 
-Work is tracked as GitLab milestones-as-epics + issues in `meklab/mekchess`.
-Dependency order: **A → (B ∥ C) → D → E → F → G**.
+```sh
+cargo fmt --all -- --check
+cargo clippy --all-targets --workspace -- -D warnings
+cargo build --workspace --all-targets
+cargo test --workspace
+```
 
-| Epic | Theme | Learning goal |
-|------|-------|---------------|
-| A | Core & Test Harness | board rep + testing (the foundation) |
-| B | Debug UI | building/managing UI |
-| C | Classical Engine | optimization |
-| D | Testing (Local SPRT) | engine-vs-engine comparison |
-| E | NNUE Engine | models & neural networks |
-| F | Distributed Testing & Data | intensive workloads on k8s |
-| G | Lichess Bot | APIs |
+Once move generation lands, a perft test against the standard positions becomes the correctness gate in this pipeline.
 
-Background research that informed these decisions (board representation,
-perft, UCI, the Rust ecosystem, NNUE vs AlphaZero, UI/arena/lichess tooling)
-is saved in the repo wiki under `research/`.
+## License
+
+MIT. See [LICENSE](LICENSE).
