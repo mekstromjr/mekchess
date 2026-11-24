@@ -13,7 +13,7 @@ members = [
 edition = "2024"
 rust-version = "1.85"
 license = "MIT"
-repository = "https://gitlab.meklab.net/meklab/mekchess"
+repository = "https://github.com/mekstromjr/mekchess"
 
 [workspace.dependencies]
 # Internal crates referenced by path so versions stay in lockstep.

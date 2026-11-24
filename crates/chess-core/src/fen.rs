@@ -82,11 +82,11 @@ impl Piece {
         }
     }
 
-    /// The FEN character for this piece (the inverse of [`from_fen_char`]).
+    /// The FEN character for this piece (the inverse of [`from_fen`]).
     ///
     /// White pieces are uppercase, Black pieces lowercase.
     ///
-    /// [`from_fen_char`]: Piece::from_fen_char
+    /// [`from_fen`]: Piece::from_fen
     pub fn to_fen(&self) -> char {
         let mut c = match self.kind {
             PieceType::Pawn => 'p',
@@ -122,26 +122,43 @@ impl Piece {
 /// at the high ones.
 pub fn placement_from_fen(placement: &str) -> Option<[Option<Piece>; 64]> {
     let mut squares = [None; 64];
-    for (i, rank_str) in placement.split('/').enumerate() {
-        // Each loop iteration is one rank from 0-7
+    let ranks: Vec<&str> = placement.split('/').collect();
+    if ranks.len() != 8 {
+        return None;
+    }
+    for (i, rank_str) in ranks.iter().enumerate() {
+        // FEN lists rank 8 first, so the i-th field is rank 7 - i.
         let rank: u8 = 7 - i as u8;
         let mut file: u8 = 0;
         for c in rank_str.chars() {
             if let Some(n) = c.to_digit(10) {
+                if !(1..=8).contains(&n) {
+                    return None;
+                }
                 file += n as u8;
             } else {
+                if file >= 8 {
+                    return None;
+                }
                 let piece = Piece::from_fen(c)?;
                 let index = Square::from_file_rank(file, rank).index();
                 squares[index as usize] = Some(piece);
                 file += 1;
             }
+            if file > 8 {
+                return None;
+            }
+        }
+        // Every rank must describe exactly eight files.
+        if file != 8 {
+            return None;
         }
     }
     Some(squares)
 }
 
 /// Serialize a 64-square mailbox back into the FEN piece-placement field — the
-/// inverse of [`parse_placement`]. Ranks are written high-to-low (rank 8
+/// inverse of [`placement_from_fen`]. Ranks are written high-to-low (rank 8
 /// first), consecutive empty squares are run-length-encoded as a digit, and the
 /// eight ranks are joined by `/`.
 pub fn placement_to_fen(squares: &[Option<Piece>; 64]) -> String {
@@ -243,33 +260,26 @@ impl Board {
         if fields.len() != 6 {
             return Err(FenError::WrongFieldCount(fields.len()));
         }
-        //   - field 0: parse_placement(..).ok_or(FenError::BadPlacement)?
         let squares = placement_from_fen(fields[0]).ok_or(FenError::BadPlacement)?;
 
-        //   - field 1: "w" -> White, "b" -> Black, else BadSideToMove
         let side_to_move = match fields[1] {
             "w" => Color::White,
             "b" => Color::Black,
             _ => return Err(FenError::BadSideToMove),
         };
 
-        //   - field 2: CastlingRights::from_fen(..).ok_or(FenError::BadCastling)?
         let castling = CastlingRights::from_fen(fields[2]).ok_or(FenError::BadCastling)?;
 
-        //   - field 3: "-" -> None, else Some(Square::from_algebraic(..)
-        //              .ok_or(FenError::BadEnPassant)?)
         let en_passant = if fields[3] == "-" {
             None
         } else {
             Some(Square::from_algebraic(fields[3]).ok_or(FenError::BadEnPassant)?)
         };
 
-        //   - field 4: .parse::<u32>().map_err(|_| FenError::BadHalfmove)?
         let halfmove = fields[4]
             .parse::<u32>()
             .map_err(|_| FenError::BadHalfmove)?;
 
-        //   - field 5: .parse::<u32>().map_err(|_| FenError::BadFullmove)?
         let fullmove = fields[5]
             .parse::<u32>()
             .map_err(|_| FenError::BadFullmove)?;
@@ -445,6 +455,19 @@ mod tests {
             Board::from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR x KQkq - 0 1"),
             Err(FenError::BadSideToMove)
         ));
+        // Placement must be exactly eight ranks of exactly eight files each.
+        let bad_placements = [
+            "8/8/8/8/8/8/8 w - - 0 1",                                   // seven ranks
+            "8/8/8/8/8/8/8/8/8 w - - 0 1",                               // nine ranks
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNRR w KQkq - 0 1", // nine files
+            "p7p/8/8/8/8/8/8/8 w - - 0 1",                               // overfull after a digit
+            "4/8/8/8/8/8/8/8 w - - 0 1",                                 // short rank
+            "9/8/8/8/8/8/8/8 w - - 0 1",                                 // digit out of range
+            "0p7/8/8/8/8/8/8/8 w - - 0 1",                               // zero digit
+        ];
+        for fen in bad_placements {
+            assert_eq!(Board::from_fen(fen), Err(FenError::BadPlacement), "{fen}");
+        }
     }
 
     #[test]
